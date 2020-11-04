@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+
+<meta name="date" content="2020-10-28" />
+
+<title>Text prediction via N-gram Stupid Back-off models</title>
+
+<script>// Hide empty <a> tag within highlighted CodeBlock for screen reader accessibility (see https://github.com/jgm/pandoc/issues/6352#issuecomment-626106786) -->
+// v0.0.1
+// Written by JooYoung Seo (jooyoung@psu.edu) and Atsushi Yasumoto on June 1st, 2020.
+
+document.addEventListener('DOMContentLoaded', function() {
+  const codeList = document.getElementsByClassName("sourceCode");
+  for (var i = 0; i < codeList.length; i++) {
+    var linkList = codeList[i].getElementsByTagName('a');
+    for (var j = 0; j < linkList.length; j++) {
+      if (linkList[j].innerHTML === "") {
+        linkList[j].setAttribute('aria-hidden', 'true');
+      }
+    }
+  }
+});
+</script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+      code.sourceCode > span { display: inline-block; line-height: 1.25; }
+  code.sourceCode > span { color: inherit; text-decoration: inherit; }
+  code.sourceCode > span:empty { height: 1.2em; }
+  .sourceCode { overflow: visible; }
+  code.sourceCode { white-space: pre; position: relative; }
+  div.sourceCode { margin: 1em 0; }
+  pre.sourceCode { margin: 0; }
+  @media screen {
+  div.sourceCode { overflow: auto; }
+  }
+  @media print {
+  code.sourceCode { white-space: pre-wrap; }
+  code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+  }
+  pre.numberSource code
+    { counter-reset: source-line 0; }
+  pre.numberSource code > span
+    { position: relative; left: -4em; counter-increment: source-line; }
+  pre.numberSource code > span > a:first-child::before
+    { content: counter(source-line);
+      position: relative; left: -1em; text-align: right; vertical-align: baseline;
+      border: none; display: inline-block;
+      -webkit-touch-callout: none; -webkit-user-select: none;
+      -khtml-user-select: none; -moz-user-select: none;
+      -ms-user-select: none; user-select: none;
+      padding: 0 4px; width: 4em;
+      color: #aaaaaa;
+    }
+  pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+  div.sourceCode
+    {   }
+  @media screen {
+  code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+  }
+  code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+  code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+  code span.at { color: #7d9029; } /* Attribute */
+  code span.bn { color: #40a070; } /* BaseN */
+  code span.bu { } /* BuiltIn */
+  code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+  code span.ch { color: #4070a0; } /* Char */
+  code span.cn { color: #880000; } /* Constant */
+  code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+  code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+  code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+  code span.dt { color: #902000; } /* DataType */
+  code span.dv { color: #40a070; } /* DecVal */
+  code span.er { color: #ff0000; font-weight: bold; } /* Error */
+  code span.ex { } /* Extension */
+  code span.fl { color: #40a070; } /* Float */
+  code span.fu { color: #06287e; } /* Function */
+  code span.im { } /* Import */
+  code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+  code span.op { color: #666666; } /* Operator */
+  code span.ot { color: #007020; } /* Other */
+  code span.pp { color: #bc7a00; } /* Preprocessor */
+  code span.sc { color: #4070a0; } /* SpecialChar */
+  code span.ss { color: #bb6688; } /* SpecialString */
+  code span.st { color: #4070a0; } /* String */
+  code span.va { color: #19177c; } /* Variable */
+  code span.vs { color: #4070a0; } /* VerbatimString */
+  code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+    </style>
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css" data-origin="pandoc">
+code.sourceCode > span { display: inline-block; line-height: 1.25; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode { white-space: pre; position: relative; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+code.sourceCode { white-space: pre-wrap; }
+code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+    color: #aaaaaa;
+  }
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code span.at { color: #7d9029; } /* Attribute */
+code span.bn { color: #40a070; } /* BaseN */
+code span.bu { } /* BuiltIn */
+code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code span.ch { color: #4070a0; } /* Char */
+code span.cn { color: #880000; } /* Constant */
+code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code span.dt { color: #902000; } /* DataType */
+code span.dv { color: #40a070; } /* DecVal */
+code span.er { color: #ff0000; font-weight: bold; } /* Error */
+code span.ex { } /* Extension */
+code span.fl { color: #40a070; } /* Float */
+code span.fu { color: #06287e; } /* Function */
+code span.im { } /* Import */
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code span.op { color: #666666; } /* Operator */
+code span.ot { color: #007020; } /* Other */
+code span.pp { color: #bc7a00; } /* Preprocessor */
+code span.sc { color: #4070a0; } /* SpecialChar */
+code span.ss { color: #bb6688; } /* SpecialString */
+code span.st { color: #4070a0; } /* String */
+code span.va { color: #19177c; } /* Variable */
+code span.vs { color: #4070a0; } /* VerbatimString */
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    for (var j = 0; j < rules.length; j++) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") continue;
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') continue;
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Text prediction via N-gram Stupid Back-off models</h1>
+<h4 class="author">Valerio Gherardi</h4>
+<a class="author_email" href="mailto:#"><a href="mailto:vgherard@sissa.it" class="email">vgherard@sissa.it</a></a>
+</address>
+<h4 class="date">2020-10-28</h4>
+
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The <code>sbo</code> package provides utilities for building and evaluating next-word prediction functions based on <a href="https://www.aclweb.org/anthology/D07-1090.pdf">Stupid Back-off</a> <a href="https://en.wikipedia.org/wiki/N-gram">N-gram models</a> in R. In this vignette, I illustrate the functions and classes exported by <code>sbo</code>, the typical workflow for building a text predictor from a given training corpus, and the evaluation of next-word predictions through a test corpus. In the last section, I list some upcoming features in a future version of <code>sbo</code>.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="kw">library</span>(sbo)</span></code></pre></div>
+</div>
+<div id="functions-and-classes" class="section level2">
+<h2>Functions and classes</h2>
+<p>The <code>sbo</code> package pivots around two (S3) object classes:</p>
+<ul>
+<li><code>kgram_freqs</code>: A collection of <span class="math inline">\(k\)</span>-gram frequency tables, with <span class="math inline">\(k\)</span> up to a given order <span class="math inline">\(N\)</span>.</li>
+<li><code>sbo_preds</code>: A collection of tables employed to store and retrieve next-word predictions in a compact and efficient way.</li>
+</ul>
+<p>The functions <code>get_word_freqs</code> and <code>get_kgram_freqs</code> are used to extract word and <span class="math inline">\(k\)</span>-gram frequency tables from a training corpus, and the function <code>build_sbo_preds</code> constructs a next-word prediction table from a <code>kgram_freqs</code> object. I illustrate the entire process of building a text-prediction function from a training corpus in the next section.</p>
+</div>
+<div id="building-a-next-word-prediction-function-with-sbo" class="section level2">
+<h2>Building a next-word prediction function with <code>sbo</code></h2>
+<p>In this and the next section we will employ the <code>twitter_train</code> and <code>twitter_test</code> example datasets, included in <code>sbo</code> for illustrative purpose:</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>train &lt;-<span class="st"> </span>twitter_train</span>
+<span id="cb2-2"><a href="#cb2-2"></a>test &lt;-<span class="st"> </span>twitter_test</span></code></pre></div>
+<p>These are small samples of <span class="math inline">\(10^5\)</span> and <span class="math inline">\(10^4\)</span> entries, respectively, from the “Tweets” Swiftkey dataset fully available <a href="https://www.kaggle.com/crmercado/tweets-blogs-news-swiftkey-dataset-4million">here</a>. Each entry consists of a single tweet in English, <em>e.g.</em>:</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="kw">head</span>(train, <span class="dv">3</span>)</span>
+<span id="cb3-2"><a href="#cb3-2"></a><span class="co">#&gt; [1] &quot;Just realized that Cedar Block is equal parts nutjob conspiracy theorist and pragmatic skeptic. Which side will win? Stay tuned.&quot;</span></span>
+<span id="cb3-3"><a href="#cb3-3"></a><span class="co">#&gt; [2] &quot;Doesn&#39;t get any stricter than a book set in the past!&quot;                                                                           </span></span>
+<span id="cb3-4"><a href="#cb3-4"></a><span class="co">#&gt; [3] &quot;Hunger Games! So excited! Want go!&quot;</span></span></code></pre></div>
+<p>The prototypical workflow for building a text-predictor in <code>sbo</code> goes as follows:</p>
+<p><em>Step 0 (optional)</em>. Build a dictionary from training set, typically keeping the top <span class="math inline">\(V\)</span> most frequent words:</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># N.B.: get_word_freqs(train) returns a tibble with a &#39;word&#39; column </span></span>
+<span id="cb4-2"><a href="#cb4-2"></a><span class="co"># and a &#39;counts&#39; column, sorted by decreasing counts.</span></span>
+<span id="cb4-3"><a href="#cb4-3"></a>dict &lt;-<span class="st"> </span><span class="kw">get_word_freqs</span>(train) <span class="op">%&gt;%</span><span class="st"> </span>names <span class="op">%&gt;%</span><span class="st"> </span>.[<span class="dv">1</span><span class="op">:</span><span class="dv">1000</span>]</span>
+<span id="cb4-4"><a href="#cb4-4"></a><span class="kw">head</span>(dict)</span>
+<span id="cb4-5"><a href="#cb4-5"></a><span class="co">#&gt; [1] &quot;the&quot; &quot;to&quot;  &quot;i&quot;   &quot;a&quot;   &quot;you&quot; &quot;and&quot;</span></span></code></pre></div>
+<p>Alternatively, one may use a predefined dictionary.</p>
+<p><em>Step 1</em>. Get <span class="math inline">\(k\)</span>-gram frequencies from training corpus:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a>(freqs &lt;-<span class="st"> </span><span class="kw">get_kgram_freqs</span>(train, <span class="dt">N =</span> <span class="dv">3</span>, dict)) <span class="co"># &#39;N&#39; is the order of n-grams</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="co">#&gt; k-gram frequency table </span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co">#&gt; </span></span>
+<span id="cb5-4"><a href="#cb5-4"></a><span class="co">#&gt; Order (N): 3 </span></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="co">#&gt; Dictionary size: 1000  words</span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="co">#&gt; </span></span>
+<span id="cb5-7"><a href="#cb5-7"></a><span class="co">#&gt; # of unique 1-grams: 1002 </span></span>
+<span id="cb5-8"><a href="#cb5-8"></a><span class="co">#&gt; # of unique 2-grams: 85677 </span></span>
+<span id="cb5-9"><a href="#cb5-9"></a><span class="co">#&gt; # of unique 3-grams: 318410 </span></span>
+<span id="cb5-10"><a href="#cb5-10"></a><span class="co">#&gt; </span></span>
+<span id="cb5-11"><a href="#cb5-11"></a><span class="co">#&gt; Object size: 5.9 Mb </span></span>
+<span id="cb5-12"><a href="#cb5-12"></a><span class="co">#&gt; </span></span>
+<span id="cb5-13"><a href="#cb5-13"></a><span class="co">#&gt; See ?get_kgram_freqs for help.</span></span></code></pre></div>
+<p><em>Step 2</em>. Build next-word prediction tables:</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a>( sbo &lt;-<span class="st"> </span><span class="kw">build_sbo_preds</span>(freqs) )</span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="co">#&gt; Next-word prediction table for Stupid Back-off n-gram model </span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="co">#&gt; </span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="co">#&gt; Order (N): 3 </span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="co">#&gt; Dictionary size: 1000  words</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="co">#&gt; Back-off penalization (lambda): 0.4 </span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#&gt; Maximum number of predictions (L): 3 </span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="co">#&gt; </span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co">#&gt; Object size: 1.5 Mb </span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="co">#&gt; </span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="co">#&gt; See ?build_sbo_preds, ?predict.sbo_preds for help.</span></span></code></pre></div>
+<p>At this point we can predict next words from our model, by using <code>predict</code> (see <code>?predict.sbo_preds</code> for help on the relevant <code>predict</code> method):</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a><span class="kw">predict</span>(sbo, <span class="st">&quot;i love&quot;</span>) <span class="co"># a character vector</span></span>
+<span id="cb7-2"><a href="#cb7-2"></a><span class="co">#&gt; [1] &quot;you&quot; &quot;it&quot;  &quot;the&quot;</span></span>
+<span id="cb7-3"><a href="#cb7-3"></a><span class="kw">predict</span>(sbo, <span class="kw">c</span>(<span class="st">&quot;Colorless green ideas sleep&quot;</span>, <span class="st">&quot;See you&quot;</span>)) <span class="co"># a char matrix</span></span>
+<span id="cb7-4"><a href="#cb7-4"></a><span class="co">#&gt;      [,1]    [,2]    [,3] </span></span>
+<span id="cb7-5"><a href="#cb7-5"></a><span class="co">#&gt; [1,] &quot;&lt;EOS&gt;&quot; &quot;in&quot;    &quot;and&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6"></a><span class="co">#&gt; [2,] &quot;there&quot; &quot;&lt;EOS&gt;&quot; &quot;at&quot;</span></span></code></pre></div>
+<p>Last, but not least, we can employ our model for generating some beautiful non-sense:</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="kw">set.seed</span>(<span class="dv">840</span>)</span>
+<span id="cb8-2"><a href="#cb8-2"></a><span class="kw">babble</span>(sbo)</span>
+<span id="cb8-3"><a href="#cb8-3"></a><span class="co">#&gt; [1] &quot;who&#39;s ready.&quot;</span></span>
+<span id="cb8-4"><a href="#cb8-4"></a><span class="kw">babble</span>(sbo)</span>
+<span id="cb8-5"><a href="#cb8-5"></a><span class="co">#&gt; [1] &quot;isn&#39;t it.&quot;</span></span>
+<span id="cb8-6"><a href="#cb8-6"></a><span class="kw">babble</span>(sbo)</span>
+<span id="cb8-7"><a href="#cb8-7"></a><span class="co">#&gt; [1] &quot;news is welcome and best.&quot;</span></span></code></pre></div>
+<p>If we wish to save the frequency tables, or the final prediction tables, and reload them in a future session, we can easily do this through <code>save</code>/<code>load</code>, <em>e.g.</em></p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1"></a><span class="kw">save</span>(sbo)</span>
+<span id="cb9-2"><a href="#cb9-2"></a><span class="kw">load</span>(<span class="st">&quot;sbo.rda&quot;</span>)</span></code></pre></div>
+<p>For convenience, the objects created in this section are preloaded in <code>sbo</code> as <code>twitter_dict</code>, <code>twitter_freqs</code> and <code>twitter_sbo</code>.</p>
+<div id="some-details-on-text-preprocessing-and-k-gram-tokenization" class="section level3">
+<h3>Some details on text preprocessing and <span class="math inline">\(k\)</span>-gram tokenization</h3>
+<p>At the present stage, both <code>get_word_freqs</code> and <code>get_kgram_freqs</code> employ internal functions for text preprocessing and tokenization. Preprocessing consists of the following steps, in this order:</p>
+<ol style="list-style-type: decimal">
+<li>Lower-case everything.</li>
+<li>Replace all punctuation including <strong>.</strong>, <strong>?</strong>, <strong>!</strong>, <strong>:</strong>, <strong>;</strong> (any number of any of these) with a single <strong>.</strong>.</li>
+<li>Strip any character different from <strong>.</strong>, <strong>’</strong>, <strong>space</strong> or alphanumeric.</li>
+<li>Split sentences in correspondence of dots and wrap each sentence with appropriate Begin/End-Of-Sentence tokens.</li>
+</ol>
+<p>Words (including the Begin/End-Of-Sentence tokens) are thus tokenized by splitting sentences in correspondence of <strong>space</strong>. In <code>get_kgram_freqs</code>, each out-of-vocabulary word is replaced by an unknown word token.</p>
+</div>
+</div>
+<div id="evaluating-next-word-predictions" class="section level2">
+<h2>Evaluating next-word predictions</h2>
+<p>Once we have built our next-word predictor, we may want to directly test its predictions on an independent corpus. For this purpose, <code>sbo</code> offers the function <code>eval_sbo_preds</code>, which performs the following test:</p>
+<ol style="list-style-type: decimal">
+<li>Sample a single <span class="math inline">\(N\)</span>-gram from each sentence of test corpus.</li>
+<li>Predict next words from the <span class="math inline">\((N-1)\)</span>-gram prefix.</li>
+<li>Return all predictions, together with the true word completions.</li>
+</ol>
+<p>As a concrete example, we test the text-predictor trained in the previous section over the Twitter (independent) test set.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1"></a><span class="kw">set.seed</span>(<span class="dv">840</span>)</span>
+<span id="cb10-2"><a href="#cb10-2"></a>(eval &lt;-<span class="st"> </span><span class="kw">eval_sbo_preds</span>(sbo, test))</span>
+<span id="cb10-3"><a href="#cb10-3"></a><span class="co">#&gt; # A tibble: 18,497 x 4</span></span>
+<span id="cb10-4"><a href="#cb10-4"></a><span class="co">#&gt;    input            true      preds[,1] [,2]  [,3]    correct</span></span>
+<span id="cb10-5"><a href="#cb10-5"></a><span class="co">#&gt;    &lt;chr&gt;            &lt;chr&gt;     &lt;chr&gt;     &lt;chr&gt; &lt;chr&gt;   &lt;lgl&gt;  </span></span>
+<span id="cb10-6"><a href="#cb10-6"></a><span class="co">#&gt;  1 &quot;oh hey&quot;         shirtless a         &lt;EOS&gt; i&#39;m     FALSE  </span></span>
+<span id="cb10-7"><a href="#cb10-7"></a><span class="co">#&gt;  2 &quot; &quot;              how       i         &lt;EOS&gt; thanks  FALSE  </span></span>
+<span id="cb10-8"><a href="#cb10-8"></a><span class="co">#&gt;  3 &quot; ah&quot;            no        &lt;EOS&gt;     yes   i       FALSE  </span></span>
+<span id="cb10-9"><a href="#cb10-9"></a><span class="co">#&gt;  4 &quot;he estudiado&quot;   &lt;EOS&gt;     &lt;EOS&gt;     the   it      TRUE   </span></span>
+<span id="cb10-10"><a href="#cb10-10"></a><span class="co">#&gt;  5 &quot;nada d&quot;         &lt;EOS&gt;     &lt;EOS&gt;     from  project TRUE   </span></span>
+<span id="cb10-11"><a href="#cb10-11"></a><span class="co">#&gt;  6 &quot;mama no&quot;        esta      &lt;EOS&gt;     more  matter  FALSE  </span></span>
+<span id="cb10-12"><a href="#cb10-12"></a><span class="co">#&gt;  7 &quot;ya mean&quot;        &lt;EOS&gt;     &lt;EOS&gt;     to    i       TRUE   </span></span>
+<span id="cb10-13"><a href="#cb10-13"></a><span class="co">#&gt;  8 &quot;tennis the&quot;     scoring   word      same  best    FALSE  </span></span>
+<span id="cb10-14"><a href="#cb10-14"></a><span class="co">#&gt;  9 &quot; thanks&quot;        for       for       &lt;EOS&gt; to      TRUE   </span></span>
+<span id="cb10-15"><a href="#cb10-15"></a><span class="co">#&gt; 10 &quot;concert wasn&#39;t&quot; over      a         even  that    FALSE  </span></span>
+<span id="cb10-16"><a href="#cb10-16"></a><span class="co">#&gt; # … with 18,487 more rows</span></span></code></pre></div>
+<p>As it is seen, <code>eval_sbo_preds</code> returns a tibble containing the input <span class="math inline">\((N-1)\)</span>-grams, the true completions, the predicted completions and a column indicating whether one of the predictions were correct or not.</p>
+<p>We can estimate predictive accuracy as follows (the uncertainty in the estimate is approximated by the binomial formula <span class="math inline">\(\sigma = \sqrt{\frac{p(1-p)}{M}}\)</span>, where <span class="math inline">\(M\)</span> is the number of trials):</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1"></a>eval <span class="op">%&gt;%</span><span class="st"> </span><span class="kw">summarise</span>(<span class="dt">accuracy =</span> <span class="kw">sum</span>(correct)<span class="op">/</span><span class="kw">n</span>(), </span>
+<span id="cb11-2"><a href="#cb11-2"></a>                   <span class="dt">uncertainty =</span> <span class="kw">sqrt</span>( accuracy<span class="op">*</span>(<span class="dv">1</span><span class="op">-</span>accuracy) <span class="op">/</span><span class="st"> </span><span class="kw">n</span>() )</span>
+<span id="cb11-3"><a href="#cb11-3"></a>                   )</span>
+<span id="cb11-4"><a href="#cb11-4"></a><span class="co">#&gt; # A tibble: 1 x 2</span></span>
+<span id="cb11-5"><a href="#cb11-5"></a><span class="co">#&gt;   accuracy uncertainty</span></span>
+<span id="cb11-6"><a href="#cb11-6"></a><span class="co">#&gt;      &lt;dbl&gt;       &lt;dbl&gt;</span></span>
+<span id="cb11-7"><a href="#cb11-7"></a><span class="co">#&gt; 1    0.344     0.00349</span></span></code></pre></div>
+<p>We may want to exclude from the test <span class="math inline">\(N\)</span>-grams ending by the End-Of-Sentence token (here represented by <code>&quot;.&quot;</code>):</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1"></a>eval <span class="op">%&gt;%</span><span class="st"> </span><span class="co"># Accuracy for in-sentence predictions</span></span>
+<span id="cb12-2"><a href="#cb12-2"></a><span class="st">        </span><span class="kw">filter</span>(true <span class="op">!=</span><span class="st"> &quot;.&quot;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb12-3"><a href="#cb12-3"></a><span class="st">        </span><span class="kw">summarise</span>(<span class="dt">accuracy =</span> <span class="kw">sum</span>(correct)<span class="op">/</span><span class="kw">n</span>(),</span>
+<span id="cb12-4"><a href="#cb12-4"></a>                  <span class="dt">uncertainty =</span> <span class="kw">sqrt</span>( accuracy<span class="op">*</span>(<span class="dv">1</span><span class="op">-</span>accuracy) <span class="op">/</span><span class="st"> </span><span class="kw">n</span>() )</span>
+<span id="cb12-5"><a href="#cb12-5"></a>                  )</span>
+<span id="cb12-6"><a href="#cb12-6"></a><span class="co">#&gt; # A tibble: 1 x 2</span></span>
+<span id="cb12-7"><a href="#cb12-7"></a><span class="co">#&gt;   accuracy uncertainty</span></span>
+<span id="cb12-8"><a href="#cb12-8"></a><span class="co">#&gt;      &lt;dbl&gt;       &lt;dbl&gt;</span></span>
+<span id="cb12-9"><a href="#cb12-9"></a><span class="co">#&gt; 1    0.344     0.00349</span></span></code></pre></div>
+<p>In trying to reduce the size (in physical memory) of your text-predictor, it might be useful to prune the model dictionary. The following command plots an histogram of the distribution of correct predictions in our test.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1"></a><span class="cf">if</span> (<span class="kw">require</span>(ggplot2)) {</span>
+<span id="cb13-2"><a href="#cb13-2"></a>        eval <span class="op">%&gt;%</span></span>
+<span id="cb13-3"><a href="#cb13-3"></a><span class="st">                </span><span class="kw">filter</span>(correct, true <span class="op">!=</span><span class="st"> &quot;.&quot;</span>) <span class="op">%&gt;%</span></span>
+<span id="cb13-4"><a href="#cb13-4"></a><span class="st">                </span><span class="kw">transmute</span>(<span class="dt">rank =</span> <span class="kw">match</span>(true, <span class="dt">table =</span> sbo<span class="op">$</span>dict)) <span class="op">%&gt;%</span></span>
+<span id="cb13-5"><a href="#cb13-5"></a><span class="st">                </span><span class="kw">ggplot</span>(<span class="kw">aes</span>(<span class="dt">x =</span> rank)) <span class="op">+</span><span class="st"> </span><span class="kw">geom_histogram</span>(<span class="dt">binwidth =</span> <span class="dv">25</span>)</span>
+<span id="cb13-6"><a href="#cb13-6"></a>}</span>
+<span id="cb13-7"><a href="#cb13-7"></a><span class="co">#&gt; Loading required package: ggplot2</span></span>
+<span id="cb13-8"><a href="#cb13-8"></a><span class="co">#&gt; Warning: Removed 3471 rows containing non-finite values (stat_bin).</span></span></code></pre></div>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<p>Apparently, the large majority of correct predictions come from the first ~ 300 words of the dictionary, so that if we prune the dictionary excluding words with rank greater than, <em>e.g.</em>, 500 we can reduce the size of our model without seriously affecting its prediction accuracy.</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
