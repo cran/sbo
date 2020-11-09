@@ -5,6 +5,12 @@
 
 <!-- badges: start -->
 
+[![Travis build
+status](https://travis-ci.com/vgherard/sbo.svg?branch=master)](https://travis-ci.com/vgherard/sbo)
+[![Codecov test
+coverage](https://codecov.io/gh/vgherard/sbo/branch/master/graph/badge.svg)](https://codecov.io/gh/vgherard/sbo?branch=master)
+[![CRAN
+status](https://www.r-pkg.org/badges/version/sbo)](https://CRAN.R-project.org/package=sbo)
 <!-- badges: end -->
 
 `sbo` provides utilities for building and evaluating next-word
@@ -23,16 +29,22 @@ functions such as:
 
 ## Installation
 
-You can install `sbo` from [GitHub](https://github.com/vgherard/sbo):
+### Released version
+
+You can install the latest release of `sbo` from CRAN:
+
+``` r
+install.packages("sbo")
+```
+
+### Development version:
+
+You can install the development version of `sbo` from GitHub:
 
 ``` r
 # install.packages("devtools")
 devtools::install_github("vgherard/sbo")
 ```
-
-The latter command will not build vignettes. If you want to build
-vignettes also, do `devtools::install_github("vgherard/sbo",
-build_vignettes = TRUE)` instead.
 
 ## Example
 
@@ -53,7 +65,7 @@ be used to generate predictive text as follows:
 
 ``` r
 predict(preds, "i love") # a character vector
-#> [1] "you" "it"  "my"
+#> [1] "you" "it"  "the"
 predict(preds, c("Colorless green ideas sleep", "See you")) # a char matrix
 #>      [,1]    [,2]    [,3] 
 #> [1,] "<EOS>" "in"    "and"

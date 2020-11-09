@@ -1,3 +1,11 @@
+# sbo 0.3.2
+* Patch addressing inexpected behaviour of `erase` argument in 
+`preprocess()` and `get_kgram_freqs_fast()`, c.f. issue #17.
+
+# sbo 0.3.1
+* Changed leading to trailing underscore in private variables definition of C++ `kgramFreqs` class, as per §1.6.4 of the "Writing R extensions" guide.
+* Removed Catch tests infrastructure for C++ code.
+
 # sbo 0.3.0
 * Added `get_kgram_freqs_fast()` for fast and memory efficient kgram 
 tokenization using the default text preprocessing utility.
