@@ -4,63 +4,123 @@ knitr::opts_chunk$set(
   comment = "#>"
 )
 
-## ----setup, warning=FALSE, message=FALSE--------------------------------------
+## -----------------------------------------------------------------------------
 library(sbo)
 
 ## -----------------------------------------------------------------------------
-train <- twitter_train
-test <- twitter_test
+head(sbo::twitter_train, 3)
 
 ## -----------------------------------------------------------------------------
-head(train, 3)
-
-## -----------------------------------------------------------------------------
-# N.B.: get_word_freqs(train) returns a tibble with a 'word' column 
-# and a 'counts' column, sorted by decreasing counts.
-dict <- get_word_freqs(train) %>% names %>% .[1:1000]
-head(dict)
-
-## -----------------------------------------------------------------------------
-(freqs <- get_kgram_freqs(train, N = 3, dict)) # 'N' is the order of n-grams
-
-## -----------------------------------------------------------------------------
-( sbo <- build_sbo_preds(freqs) )
-
-## -----------------------------------------------------------------------------
-predict(sbo, "i love") # a character vector
-predict(sbo, c("Colorless green ideas sleep", "See you")) # a char matrix
-
-## -----------------------------------------------------------------------------
-set.seed(840)
-babble(sbo)
-babble(sbo)
-babble(sbo)
-
-## ---- eval=FALSE--------------------------------------------------------------
-#  save(sbo)
-#  load("sbo.rda")
-
-## -----------------------------------------------------------------------------
-set.seed(840)
-(eval <- eval_sbo_preds(sbo, test))
-
-## -----------------------------------------------------------------------------
-eval %>% summarise(accuracy = sum(correct)/n(), 
-                   uncertainty = sqrt( accuracy*(1-accuracy) / n() )
+p <- sbo_predictor(object = sbo::twitter_train, # preloaded example dataset
+                   N = 3, # Train a 3-gram model
+                   dict = target ~ 0.75, # cover 75% of training corpus
+                   .preprocess = sbo::preprocess, # Preprocessing transformation 
+                   EOS = ".?!:;", # End-Of-Sentence tokens
+                   lambda = 0.4, # Back-off penalization in SBO algorithm
+                   L = 3L, # Number of predictions for input
+                   filtered = "<UNK>" # Exclude the <UNK> token from predictions
                    )
 
 ## -----------------------------------------------------------------------------
-eval %>% # Accuracy for in-sentence predictions
-        filter(true != ".") %>%
-        summarise(accuracy = sum(correct)/n(),
-                  uncertainty = sqrt( accuracy*(1-accuracy) / n() )
-                  )
+predict(p, "i love")
 
 ## -----------------------------------------------------------------------------
+set.seed(840)
+babble(p)
+babble(p)
+babble(p)
+
+## -----------------------------------------------------------------------------
+t <- sbo_predtable(object = sbo::twitter_train, # preloaded example dataset
+                   N = 3, # Train a 3-gram model
+                   dict = target ~ 0.75, # cover 75% of training corpus
+                   .preprocess = sbo::preprocess, # Preprocessing transformation 
+                   EOS = ".?!:;", # End-Of-Sentence tokens
+                   lambda = 0.4, # Back-off penalization in SBO algorithm
+                   L = 3L, # Number of predictions for input
+                   filtered = "<UNK>" # Exclude the <UNK> token from predictions
+                   )
+
+## -----------------------------------------------------------------------------
+p <- sbo_predictor(t) # This is the same as 'p' created above
+
+## ---- eval=FALSE--------------------------------------------------------------
+#  save(t)
+#  # ... and, in another session:
+#  load("t.rda")
+
+## -----------------------------------------------------------------------------
+summary(p)
+
+## -----------------------------------------------------------------------------
+head(t[[3]])
+
+## -----------------------------------------------------------------------------
+t[[1]]
+
+## ----message=FALSE, warning=FALSE---------------------------------------------
+library(dplyr) # installed with `sbo`
+
+## -----------------------------------------------------------------------------
+set.seed(840)
+(evaluation <- eval_sbo_predictor(p, test = sbo::twitter_test))
+
+## -----------------------------------------------------------------------------
+evaluation %>% summarise(accuracy = sum(correct)/n(), 
+                   uncertainty = sqrt(accuracy * (1 - accuracy) / n())
+                   )
+
+## -----------------------------------------------------------------------------
+evaluation %>% # Accuracy for in-sentence predictions
+        filter(true != "<EOS>") %>%
+        summarise(accuracy = sum(correct) / n(),
+                  uncertainty = sqrt(accuracy * (1 - accuracy) / n())
+                  )
+
+## ---- fig.align = "center"----------------------------------------------------
 if (require(ggplot2)) {
-        eval %>%
-                filter(correct, true != ".") %>%
-                transmute(rank = match(true, table = sbo$dict)) %>%
+        evaluation %>%
+                filter(correct, true != "<EOS>") %>%
+                select(true) %>%
+                transmute(rank = match(true, table = attr(p, "dict"))) %>%
                 ggplot(aes(x = rank)) + geom_histogram(binwidth = 25)
 }
+
+## -----------------------------------------------------------------------------
+dict <- sbo_dictionary(corpus = sbo::twitter_train, 
+                       max_size = 100, 
+                       target = 0.5, 
+                       .preprocess = sbo::preprocess,
+                       EOS = ".?!:;")
+
+## -----------------------------------------------------------------------------
+(c <- word_coverage(p, sbo::twitter_train))
+
+## -----------------------------------------------------------------------------
+summary(c)
+
+## ---- fig.align = "center", fig.width=5---------------------------------------
+plot(c)
+
+## -----------------------------------------------------------------------------
+f <- kgram_freqs(corpus = sbo::twitter_train, 
+                 N = 3, 
+                 dict = target ~ 0.75,
+                 .preprocess = sbo::preprocess,
+                 EOS = ".?!:;"
+                 )
+
+## -----------------------------------------------------------------------------
+predict(f, "i love")
+
+## -----------------------------------------------------------------------------
+predict(p, "i love")
+
+## -----------------------------------------------------------------------------
+size_in_MB <- function(x) format(utils::object.size(x), units = "MB")
+sapply(list(sbo_predtable = t, kgram_freqs = f), size_in_MB)
+
+## -----------------------------------------------------------------------------
+chrono_predict <- function(x) system.time(predict(x, "i love"), gcFirst = TRUE)
+lapply(list(sbo_predictor = p, kgram_freqs = f), chrono_predict)
 

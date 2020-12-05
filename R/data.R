@@ -1,9 +1,9 @@
 #' Twitter training set
 #'
 #' @source \url{https://www.kaggle.com/crmercado/tweets-blogs-news-swiftkey-dataset-4million}
-#' @format A collection of 70'000 Twitter posts in English.
+#' @format A collection of 50'000 Twitter posts in English.
 #' @seealso \code{\link[sbo]{twitter_test}}, \code{\link[sbo]{twitter_dict}},
-#' \code{\link[sbo]{twitter_freqs}}, \code{\link[sbo]{twitter_preds}}
+#' \code{\link[sbo]{twitter_freqs}}, \code{\link[sbo]{twitter_predtable}}
 #' @examples
 #' head(twitter_train)
 "twitter_train"
@@ -33,7 +33,7 @@
 #' k-gram frequencies from Twitter training set
 #'
 #' @md
-#' @format A \code{kgram_freqs} object. Contains k-gram frequencies from
+#' @format A \code{sbo_kgram_freqs} object. Contains k-gram frequencies from
 #' the example training set \code{\link[sbo]{twitter_train}}.
 #' @seealso \code{\link[sbo]{twitter_train}}
 "twitter_freqs"
@@ -42,8 +42,8 @@
 #' Next-word prediction tables from 3-gram model trained on Twitter training
 #' set
 #' @md
-#' @format A \code{sbo_preds} object. Contains prediction tables of a 3-gram
+#' @format A \code{sbo_predtable} object. Contains prediction tables of a 3-gram
 #' Stupid Back-off model trained on the example training set
 #' \code{\link[sbo]{twitter_train}}.
 #' @seealso \code{\link[sbo]{twitter_train}}
-"twitter_preds"
+"twitter_predtable"

@@ -5,37 +5,33 @@
 
 using namespace Rcpp;
 
-// get_kgram_freqsC
-List get_kgram_freqsC(const std::vector<std::string>& sentences, int N, const std::vector<std::string>& dict);
-RcppExport SEXP _sbo_get_kgram_freqsC(SEXP sentencesSEXP, SEXP NSEXP, SEXP dictSEXP) {
+// get_kgram_prefix
+IntegerVector get_kgram_prefix(const std::string& line, int N, const std::vector<std::string>& dict, std::string EOS);
+RcppExport SEXP _sbo_get_kgram_prefix(SEXP lineSEXP, SEXP NSEXP, SEXP dictSEXP, SEXP EOSSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type sentences(sentencesSEXP);
+    Rcpp::traits::input_parameter< const std::string& >::type line(lineSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< const std::vector<std::string>& >::type dict(dictSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_kgram_freqsC(sentences, N, dict));
+    Rcpp::traits::input_parameter< std::string >::type EOS(EOSSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_kgram_prefix(line, N, dict, EOS));
     return rcpp_result_gen;
 END_RCPP
 }
-// get_kgram_freqs_fastC
-List get_kgram_freqs_fastC(std::vector<std::string>& input, int N, const std::vector<std::string>& dict, std::string erase, bool lower_case, std::string EOS);
-RcppExport SEXP _sbo_get_kgram_freqs_fastC(SEXP inputSEXP, SEXP NSEXP, SEXP dictSEXP, SEXP eraseSEXP, SEXP lower_caseSEXP, SEXP EOSSEXP) {
+// get_pc_ptr
+SEXP get_pc_ptr(const List& object);
+RcppExport SEXP _sbo_get_pc_ptr(SEXP objectSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::vector<std::string>& >::type input(inputSEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type dict(dictSEXP);
-    Rcpp::traits::input_parameter< std::string >::type erase(eraseSEXP);
-    Rcpp::traits::input_parameter< bool >::type lower_case(lower_caseSEXP);
-    Rcpp::traits::input_parameter< std::string >::type EOS(EOSSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_kgram_freqs_fastC(input, N, dict, erase, lower_case, EOS));
+    Rcpp::traits::input_parameter< const List& >::type object(objectSEXP);
+    rcpp_result_gen = Rcpp::wrap(get_pc_ptr(object));
     return rcpp_result_gen;
 END_RCPP
 }
 // get_word_freqsC
-std::map<std::string, int> get_word_freqsC(const std::vector<std::string>& text);
+std::unordered_map<std::string, int> get_word_freqsC(const std::vector<std::string>& text);
 RcppExport SEXP _sbo_get_word_freqsC(SEXP textSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -45,29 +41,44 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// get_Ngram_prefix
-IntegerVector get_Ngram_prefix(const std::string& line, int N, const std::vector<std::string>& dict, std::string EOS);
-RcppExport SEXP _sbo_get_Ngram_prefix(SEXP lineSEXP, SEXP NSEXP, SEXP dictSEXP, SEXP EOSSEXP) {
+// kgram_freqs_cpp
+List kgram_freqs_cpp(const std::vector<std::string>& sentences, int N, const std::vector<std::string>& dict);
+RcppExport SEXP _sbo_kgram_freqs_cpp(SEXP sentencesSEXP, SEXP NSEXP, SEXP dictSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type line(lineSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type sentences(sentencesSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< const std::vector<std::string>& >::type dict(dictSEXP);
-    Rcpp::traits::input_parameter< std::string >::type EOS(EOSSEXP);
-    rcpp_result_gen = Rcpp::wrap(get_Ngram_prefix(line, N, dict, EOS));
+    rcpp_result_gen = Rcpp::wrap(kgram_freqs_cpp(sentences, N, dict));
     return rcpp_result_gen;
 END_RCPP
 }
-// predict_sbo_preds
-CharacterMatrix predict_sbo_preds(List object, std::vector<std::string> input);
-RcppExport SEXP _sbo_predict_sbo_preds(SEXP objectSEXP, SEXP inputSEXP) {
+// kgram_freqs_fast_cpp
+List kgram_freqs_fast_cpp(std::vector<std::string>& input, int N, const std::vector<std::string>& dict, std::string erase, bool lower_case, std::string EOS);
+RcppExport SEXP _sbo_kgram_freqs_fast_cpp(SEXP inputSEXP, SEXP NSEXP, SEXP dictSEXP, SEXP eraseSEXP, SEXP lower_caseSEXP, SEXP EOSSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type object(objectSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string>& >::type input(inputSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< const std::vector<std::string>& >::type dict(dictSEXP);
+    Rcpp::traits::input_parameter< std::string >::type erase(eraseSEXP);
+    Rcpp::traits::input_parameter< bool >::type lower_case(lower_caseSEXP);
+    Rcpp::traits::input_parameter< std::string >::type EOS(EOSSEXP);
+    rcpp_result_gen = Rcpp::wrap(kgram_freqs_fast_cpp(input, N, dict, erase, lower_case, EOS));
+    return rcpp_result_gen;
+END_RCPP
+}
+// predict_sbo_predictor
+CharacterMatrix predict_sbo_predictor(SEXP ptr_sexp, std::vector<std::string> input);
+RcppExport SEXP _sbo_predict_sbo_predictor(SEXP ptr_sexpSEXP, SEXP inputSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type ptr_sexp(ptr_sexpSEXP);
     Rcpp::traits::input_parameter< std::vector<std::string> >::type input(inputSEXP);
-    rcpp_result_gen = Rcpp::wrap(predict_sbo_preds(object, input));
+    rcpp_result_gen = Rcpp::wrap(predict_sbo_predictor(ptr_sexp, input));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -98,11 +109,12 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_sbo_get_kgram_freqsC", (DL_FUNC) &_sbo_get_kgram_freqsC, 3},
-    {"_sbo_get_kgram_freqs_fastC", (DL_FUNC) &_sbo_get_kgram_freqs_fastC, 6},
+    {"_sbo_get_kgram_prefix", (DL_FUNC) &_sbo_get_kgram_prefix, 4},
+    {"_sbo_get_pc_ptr", (DL_FUNC) &_sbo_get_pc_ptr, 1},
     {"_sbo_get_word_freqsC", (DL_FUNC) &_sbo_get_word_freqsC, 1},
-    {"_sbo_get_Ngram_prefix", (DL_FUNC) &_sbo_get_Ngram_prefix, 4},
-    {"_sbo_predict_sbo_preds", (DL_FUNC) &_sbo_predict_sbo_preds, 2},
+    {"_sbo_kgram_freqs_cpp", (DL_FUNC) &_sbo_kgram_freqs_cpp, 3},
+    {"_sbo_kgram_freqs_fast_cpp", (DL_FUNC) &_sbo_kgram_freqs_fast_cpp, 6},
+    {"_sbo_predict_sbo_predictor", (DL_FUNC) &_sbo_predict_sbo_predictor, 2},
     {"_sbo_preprocess", (DL_FUNC) &_sbo_preprocess, 3},
     {"_sbo_tokenize_sentences", (DL_FUNC) &_sbo_tokenize_sentences, 2},
     {NULL, NULL, 0}

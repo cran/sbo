@@ -5,26 +5,29 @@
 
 <!-- badges: start -->
 
-[![Travis build
-status](https://travis-ci.com/vgherard/sbo.svg?branch=master)](https://travis-ci.com/vgherard/sbo)
+[![AppVeyor build
+status](https://ci.appveyor.com/api/projects/status/github/vgherard/sbo?branch=master&svg=true)](https://ci.appveyor.com/project/vgherard/sbo)
+[![CircleCI build
+status](https://circleci.com/gh/vgherard/sbo.svg?style=svg)](https://circleci.com/gh/vgherard/sbo)
+[![GitHub Actions build
+status](https://github.com/vgherard/sbo/workflows/R-CMD-check/badge.svg)](https://github.com/vgherard/sbo/actions)
 [![Codecov test
 coverage](https://codecov.io/gh/vgherard/sbo/branch/master/graph/badge.svg)](https://codecov.io/gh/vgherard/sbo?branch=master)
 [![CRAN
 status](https://www.r-pkg.org/badges/version/sbo)](https://CRAN.R-project.org/package=sbo)
+[![CRAN
+downloads](http://cranlogs.r-pkg.org/badges/grand-total/sbo)](https://CRAN.R-project.org/package=sbo)
 <!-- badges: end -->
 
-`sbo` provides utilities for building and evaluating next-word
-prediction functions based on [Stupid
-Back-off](https://www.aclweb.org/anthology/D07-1090.pdf) [N-gram
-models](https://en.wikipedia.org/wiki/N-gram) in R. It includes
-functions such as:
+`sbo` provides utilities for building and evaluating text predictors
+based on [Stupid
+Back-off](https://www.aclweb.org/anthology/D07-1090.pdf) N-gram models
+in R. It includes functions such as:
 
-  - `get_kgram_freqs()`: Extract \(k\)-gram frequency tables from a text
+  - `kgram_freqs()`: Extract \(k\)-gram frequency tables from a text
     corpus
-  - `build_sbo_preds()`: Build next-word prediction tables from Stupid
-    Back-off \(N\)-gram model. Allows compact and efficient
-    storage/retrieval of a text prediction function.
-  - `eval_sbo_preds()`: Test model predictions against an independent
+  - `sbo_predictor()`: Train a next-word predictor via Stupid Back-off.
+  - `eval_sbo_predictor()`: Test text predictions against an independent
     corpus.
 
 ## Installation
@@ -48,30 +51,37 @@ devtools::install_github("vgherard/sbo")
 
 ## Example
 
-This example shows the prototypical workflow for building a
-text-predictor with `sbo`:
+This example shows how to build a text predictor with `sbo`:
 
 ``` r
 library(sbo)
-## Train a next-word prediction function based on 3-gram Stupid Back-off. 
-train <- sbo::twitter_train # 100k tweets, example dataset from sbo
-dict <- get_word_freqs(train) %>% names %>% .[1:1000] # Build rank-sorted dictionary
-freqs <- get_kgram_freqs(train, N = 3, dict) # Get k-gram frequencies (up to 3-grams)
-preds <- build_sbo_preds(freqs) # Build prediction tables
+p <- sbo_predictor(sbo::twitter_train, # 50k tweets, example dataset
+                   N = 3, # Train a 3-gram model
+                   dict = sbo::twitter_dict, # Top 1k words appearing in corpus
+                   .preprocess = sbo::preprocess, # Preprocessing transformation
+                   EOS = ".?!:;" # End-Of-Sentence characters
+                   )
 ```
 
-The `preds` object now stores the next-word prediction tables, which can
-be used to generate predictive text as follows:
+The object `p` can now be used to generate predictive text as follows:
 
 ``` r
-predict(preds, "i love") # a character vector
-#> [1] "you" "it"  "the"
-predict(preds, c("Colorless green ideas sleep", "See you")) # a char matrix
-#>      [,1]    [,2]    [,3] 
-#> [1,] "<EOS>" "in"    "and"
-#> [2,] "there" "<EOS>" "at"
+predict(p, "i love") # a character vector
+#> [1] "you" "it"  "my"
+predict(p, "you love") # another character vector
+#> [1] "<EOS>" "me"    "the"
+predict(p, 
+        c("i love", "you love", "she loves", "we love", "you love", "they love")
+        ) # a character matrix
+#>      [,1]    [,2]  [,3] 
+#> [1,] "you"   "it"  "my" 
+#> [2,] "<EOS>" "me"  "the"
+#> [3,] "you"   "my"  "me" 
+#> [4,] "you"   "our" "it" 
+#> [5,] "<EOS>" "me"  "the"
+#> [6,] "to"    "you" "and"
 ```
 
 ## Help
 
-For help, see the `sbo` [website](https://vgherard.github.io/sbo/)
+For help, see the `sbo` [website](https://vgherard.github.io/sbo/).

@@ -8,7 +8,7 @@
 #' @author Valerio Gherardi
 #' @md
 #'
-#' @param model a \code{sbo_preds} object.
+#' @param model a \code{sbo_predictor} object.
 #' @param input a length one character vector. Starting point for babbling!
 #' If \code{NA}, as by default, a random word is sampled from the model's
 #' dictionary.
@@ -23,19 +23,19 @@
 #' encountered, or when the number of generated words exceeds n_max.
 #' @examples
 #' # Babble!
+#' p <- sbo_predictor(twitter_predtable)
 #' set.seed(840) # Set seed for reproducibility
-#' babble(twitter_preds)
-#' @importFrom stats predict
+#' babble(p)
 ################################################################################
-babble <- function(model, input = NA, n_max = 100L, L = model$L){
-        stopifnot(is.na(input) | is.character(input) & length(input) == 1)
-        stopifnot(length((n_max %<>% as.integer))==1)
-        if(is.na(n_max) | n_max < 1L)
-                stop("n_max could not be coerced to a positive integer")
-        if(n_max < 2L) return( paste(input,"[... reached maximum length ...]") )
-        if(is.na(input))
-                input <- sample(model$dict, 1)
-        next_word <- sample(size = 1L, predict(model, input, L))
-        if(next_word == "<EOS>") return(paste0(input,"."))
-        babble(model, paste(input,next_word), n_max-1L, L)
+babble <- function(model, input = NA, n_max = 100L, L = attr(model, "L")){
+  stopifnot(is.na(input) | is.character(input) & length(input) == 1)
+  stopifnot(length(n_max <- as.integer(n_max)) == 1)
+  if (is.na(n_max) | n_max < 1L)
+    stop("n_max could not be coerced to a positive integer")
+  if (is.na(input))
+    input <- sample(attr(model, "dict"), 1)
+  if (n_max < 2L) return( paste(input,"[... reached maximum length ...]") )
+  next_word <- sample(size = 1L, predict(model, input, L))
+  if (next_word == "<EOS>") return(paste0(input,"."))
+  babble(model, paste(input,next_word), n_max - 1L, L)
 }
